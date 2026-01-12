@@ -1,0 +1,14 @@
+{
+    "diagnostics": {
+        "diagnosticInterval": 500,
+        "disable": [],
+        "enable": true,
+        "enables": [],
+        "globals": [
+            "luanet",
+            "import"
+        ],
+        "globalsRegex": [],
+        "severity": {}
+    }
+}
