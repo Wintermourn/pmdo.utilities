@@ -76,10 +76,11 @@ local array_mt = {__njsonType = "array"}
 
 
 local out = {
-    __VERSION = 1,
+    __VERSION = 1.1,
     values = {
         null = null_value
-    }
+    },
+    helpers = {}
 }
 
 ---@type fun(val: any): any
@@ -234,6 +235,43 @@ function out.serialize(tbl, beautify)
     local object = objectify(tbl)
 
     return __JsonConvert.SerializeObject(object, beautify and __Formatting.Indented or nil)
+end
+
+local unpack = unpack or table.unpack
+---Combines any number of arguments into a path suitable for the current Operating System.
+---@param ... any
+---@return string
+function out.helpers.combine_path(...)
+    local clean_args = {}
+    for i,k in ipairs {...} do
+        clean_args[i] = tostring(k)
+    end
+
+    return __Path.Combine(unpack(clean_args))
+end
+
+
+if RogueEssence ~= nil then
+    local pathmod = RogueEssence.PathMod
+    local modfromnamespace = pathmod.GetModFromNamespace
+    local modfromuuid = pathmod.GetModFromUuid
+    ---Resolves the full path to a mod's folder using its namespace
+    ---@param mod_namespace string
+    ---@return string?
+    function out.helpers.get_mod_path_from_namespace(mod_namespace)
+        local mod = modfromnamespace(mod_namespace)
+        if mod.Path == "" then return nil end
+        return __Path.Combine(pathmod.APP_PATH, mod.Path)
+    end
+
+    ---Resolves the full path to a mod's folder using its namespace
+    ---@param mod_uuid string
+    ---@return string?
+    function out.helpers.get_mod_path_from_uuid(mod_uuid)
+        local mod = modfromuuid(mod_uuid)
+        if mod.Path == "" then return nil end
+        return __Path.Combine(pathmod.APP_PATH, mod.Path)
+    end
 end
 
 return out

@@ -6,9 +6,19 @@
         "enables": [],
         "globals": [
             "luanet",
-            "import"
+            "import",
+            "RogueEssence"
         ],
         "globalsRegex": [],
         "severity": {}
+    },
+    "runtime": {
+        "extensions": [],
+        "frameworkVersions": [],
+        "nonstandardSymbol": [],
+        "requireLikeFunction": [],
+        "requirePattern": [],
+        "special": {},
+        "version": "Lua5.4"
     }
 }
