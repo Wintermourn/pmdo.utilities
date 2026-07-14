@@ -3,7 +3,7 @@
 Download any script you want to use (view in list > raw > ctrl+s, or view in list > raw > ctrl+a > ctrl+c)
 
 ## Utilities
-### [Lua Language Server Support for NLua](./lls) v0.1
+### [Lua Language Server Support for NLua](https://github.com/Wintermourn/pmdo.lls) v0.1
 Provides partial completion for `luanet` functions and C# objects.
 ## Scripts
 ### [NJson](./njson.lua) v1.2
