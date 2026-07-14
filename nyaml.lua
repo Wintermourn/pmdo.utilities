@@ -3,7 +3,7 @@
     made by Wintermourn
 
     dependencies:
-        - A compiled copy of SharpYaml.
+        - A compiled copy of SharpYaml 2.1.
 
     notes:
         - The path to SharpYaml must be passed to the library by calling the returned function with the path, or segments of it, as arguments, ending with the filename.
@@ -107,6 +107,7 @@ function mt.__call( self, path, ... )
     local type_YamlMappingNode = previous_sharpyaml_instance:GetType 'SharpYaml.Serialization.YamlMappingNode'
     local type_YamlSequenceNode = previous_sharpyaml_instance:GetType 'SharpYaml.Serialization.YamlSequenceNode'
     local type_YamlScalarNode = previous_sharpyaml_instance:GetType 'SharpYaml.Serialization.YamlScalarNode'
+    local type_YamlAliasNode = previous_sharpyaml_instance:GetType 'SharpYaml.Serialization.YamlAliasNode'
 
 
     do -- Deserialization
@@ -243,11 +244,21 @@ function mt.__call( self, path, ... )
 
             local visitation = visited[v]
             if visitation then
+                local v_type = visitation:GetType()
+
                 if not visitation.Anchor or visitation.Anchor == '' then
                     visitation.Anchor = 'ref'.. anchor_state.count
                     anchor_state.count = anchor_state.count + 1
                 end
-                return visitation
+
+                local aliased
+                if v_type == type_YamlSequenceNode then
+                    aliased = __Activator.CreateInstance(type_YamlSequenceNode)
+                elseif v_type == type_YamlMappingNode then
+                    aliased = __Activator.CreateInstance(type_YamlMappingNode)
+                end
+                aliased.Anchor = visitation.Anchor
+                return aliased
             end
 
             local mtt = getmetatable(v) or blank
@@ -282,7 +293,7 @@ function mt.__call( self, path, ... )
                 local item
                 for i = 1, max do
                     item = v[i]
-                    if item then
+                    if item ~= nil then
                         node:Add(objectify_node(item, visited, anchor_state)) 
                     else
                         node:Add(__Activator.CreateInstance(type_YamlScalarNode, 'null'))
