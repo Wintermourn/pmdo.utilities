@@ -29,6 +29,8 @@ if not (import) then
     error "import function is required"
 end
 
+local __Guid = import 'System.Guid'
+
 local __IO = namespace 'System.IO'
     local __Path = __IO.Path
     local __Directory = __IO.Directory
@@ -76,7 +78,7 @@ local array_mt = {__njsonType = "array"}
 
 
 local out = {
-    __VERSION = 1.1,
+    __VERSION = 1.2,
     values = {
         null = null_value
     },
@@ -268,8 +270,10 @@ if RogueEssence ~= nil then
     ---@param mod_uuid string
     ---@return string?
     function out.helpers.get_mod_path_from_uuid(mod_uuid)
-        local mod = modfromuuid(mod_uuid)
-        if mod.Path == "" then return nil end
+        local success, uuid = pcall(__Guid, mod_uuid)
+        if not success then return end
+        local mod = modfromuuid(uuid)
+        if mod.Path == '' then return end
         return __Path.Combine(pathmod.APP_PATH, mod.Path)
     end
 end
