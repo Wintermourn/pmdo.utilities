@@ -63,7 +63,7 @@ local mt = {}
 ---@class nyaml
 ---@overload fun(path: string, ...: string)
 local out = setmetatable({
-    __VERSION = 1.1,
+    __VERSION = 1.2,
     values = {
         null = null_value
     },
@@ -72,7 +72,7 @@ local out = setmetatable({
 
 ---@param path string?
 ---@return nyaml
-function mt.__call( path, ... )
+function mt.__call( self, path, ... )
     local app_path = RogueEssence.PathMod.APP_PATH
     path = __Path.GetFullPath(__Path.Combine( app_path, path, ... ))
     if path:sub(1, #app_path) ~= app_path then

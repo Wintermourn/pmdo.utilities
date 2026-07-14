@@ -17,7 +17,7 @@ Helper functions:
 - Get the path to a certain mod: (mod must be loaded!)
   - By namespace: `njson.helpers.get_mod_path_from_namespace("namespace"): string?`
   - By uuid: `njson.helpers.get_mod_path_from_uuid("00000000-0000-0000-0000-000000000000"): string?`
-### [NYAML](./nyaml.lua) v1.1
+### [NYAML](./nyaml.lua) v1.2
 Convert Lua tables into YAML and vice versa. Uses [SharpYaml](https://www.nuget.org/packages/SharpYaml/2.1.4) to handle conversion.
 #### Setup
 - Download the package on [SharpYaml](https://www.nuget.org/packages/SharpYaml/2.1.4)'s NuGet page.
