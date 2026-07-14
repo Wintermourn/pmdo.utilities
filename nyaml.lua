@@ -9,13 +9,16 @@
         - The path to SharpYaml must be passed to the library by calling the returned function with the path, or segments of it, as arguments, ending with the filename.
             e.g. `require 'nyaml' ('MODS/my_mod', 'Libraries', 'SharpYaml.dll')`
             - The game's base APP_PATH will be added to the start automatically.
-        - Tags can be applied to tables by adding `__nyamlTag` to the metatable. The value must be a string.
-        - `__nyamlUnwrap` can be used to add tags to non-table values and to have non-table output (like strings, numbers, booleans, nil)
-            - The value can be a function (fun(v): nyaml.to_yaml).
-            - The value can be a key in the table. For example, a metatable {__nyamlUnwrap = "key"} on a table {key = "true"} will convert to the string "true"
-        - `__nyamlType` is used to explicitly set the types of values.
-            - a `__nyamlType` of `null` is used for explicitly null values, to differentiate from `undefined` ones.
-            - a `__nyamlType` of `array` can be used on tables with only numeric keys. Gaps will automatically be filled with null.
+        - Various values can be added to metatables to adjust how the library works:
+            - `__nyamlTag`: Applies a tag to the attached table.
+            - `__nyamlUnwrap`: Used to apply things like tags to non-table values. The value can be a function or a string.
+                - e.g. `{alpha = setmetatable({value = "test"}, {__nyamlUnwrap = "test", __nyamlTag = "tag"})}` creates `alpha: !tag "test"`
+            - `__nyamlType`: Can be used to force the output type. Supports the following values:
+                - `null`: explicitly outputs null instead of skipping.
+                - `array`: forces the output to fill gaps between keys with null.
+                - `object`: forces a table to always output keys.
+            - `__nyamlKeyOrder`: Can be used to force the order of an object's keys. Must be a list of keys (`string[]`).
+                - Keys not defined in the list will still be included in the output.
 ]]
 
 if luanet == nil then
@@ -49,6 +52,7 @@ local sentinel = _G.__nyaml_sentinel
 
 local null_value = setmetatable({ __nyamlType = 'null' }, { __newindex = function() error 'null value is immutable' end, __tostring = function() return 'null' end })
 local array_mt = { __nyamlType = 'array' }
+local object_mt = { __nyamlType = 'object' }
 local blank = {}
 
 local keywords = {
@@ -63,7 +67,7 @@ local mt = {}
 ---@class nyaml
 ---@overload fun(path: string, ...: string)
 local out = setmetatable({
-    __VERSION = 1.2,
+    __VERSION = 1.3,
     values = {
         null = null_value
     },
@@ -191,8 +195,6 @@ function mt.__call( self, path, ... )
 
     do -- Serialization
         local function is_sequential_table( tbl )
-            local mt = getmetatable(tbl)
-            if mt and mt.__nyamlType == array_mt.__nyamlType then return true end
             local final_size, max_key = 0,0
             for i in pairs(tbl) do
                 if type(i) ~= 'number' or i < 1 or i % 1 ~= 0 then return false end
@@ -274,7 +276,7 @@ function mt.__call( self, path, ... )
                 return node
             end
 
-            if mtt.__nyamlType == array_mt.__nyamlType or is_sequential_table(v) then
+            if mtt.__nyamlType == array_mt.__nyamlType or (mtt.__nyamlType ~= object_mt.__nyamlType and is_sequential_table(v)) then
                 node = __Activator.CreateInstance(type_YamlSequenceNode)
                 local max = get_max_key(v)
                 local item
@@ -288,8 +290,24 @@ function mt.__call( self, path, ... )
                 end
             else
                 node = __Activator.CreateInstance(type_YamlMappingNode)
-                for k, v in pairs(v) do
-                    node:Add(objectify_node(k, visited, anchor_state), objectify_node(v, visited, anchor_state))
+                if type(mtt.__nyamlKeyOrder) == 'table' then
+                    local keys = {}
+                    for k in pairs(v) do
+                        keys[k] = true
+                    end
+                    for _, k in ipairs(mtt.__nyamlKeyOrder) do
+                        if keys[k] then
+                            node:Add(objectify_node(k, visited, anchor_state), objectify_node(v[k], visited, anchor_state))
+                            keys[k] = nil
+                        end
+                    end
+                    for k in pairs(keys) do
+                        node:Add(objectify_node(k, visited, anchor_state), objectify_node(v[k], visited, anchor_state))
+                    end
+                else
+                    for k, v in pairs(v) do
+                        node:Add(objectify_node(k, visited, anchor_state), objectify_node(v, visited, anchor_state))
+                    end
                 end
             end
             visited[v] = node
