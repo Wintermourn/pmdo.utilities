@@ -17,8 +17,16 @@ Helper functions:
 - Get the path to a certain mod: (mod must be loaded!)
   - By namespace: `njson.helpers.get_mod_path_from_namespace("namespace"): string?`
   - By uuid: `njson.helpers.get_mod_path_from_uuid("00000000-0000-0000-0000-000000000000"): string?`
-### [NYAML](./nyaml.lua) v1.0
+### [NYAML](./nyaml.lua) v1.1
 Convert Lua tables into YAML and vice versa. Uses [SharpYaml](https://www.nuget.org/packages/SharpYaml/2.1.4) to handle conversion.
+#### Setup
+- Download the package on [SharpYaml](https://www.nuget.org/packages/SharpYaml/2.1.4)'s NuGet page.
+- Open the file in any archive program that supports ZIP files.
+- Extract `lib/netstandard2.0/SharpYaml.dll` into your mod folder.
+- Load NYAML and call it: `require 'nyaml' (path)`, replacing `path` with where you put `SharpYaml.dll`.
+  - Every argument will be connected with a slash automatically.
+  - The path must be inside the game folder.
+  - e.g. `require 'nyaml' ('MODS/my_mod', 'Libraries', 'SharpYaml.dll')`
 #### Usage
 - Preparing the library: `nyaml(path: string...)`
   - **This must be done first!**

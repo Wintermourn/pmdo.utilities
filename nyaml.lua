@@ -59,9 +59,20 @@ local keywords = {
     ['false'] = false,
 }
 
+local mt = {}
+---@class nyaml
+---@overload fun(path: string, ...: string)
+local out = setmetatable({
+    __VERSION = 1.1,
+    values = {
+        null = null_value
+    },
+    helpers = {}
+}, mt)
+
 ---@param path string?
 ---@return nyaml
-function output( path, ... )
+function mt.__call( path, ... )
     local app_path = RogueEssence.PathMod.APP_PATH
     path = __Path.GetFullPath(__Path.Combine( app_path, path, ... ))
     if path:sub(1, #app_path) ~= app_path then
@@ -93,14 +104,6 @@ function output( path, ... )
     local type_YamlSequenceNode = previous_sharpyaml_instance:GetType 'SharpYaml.Serialization.YamlSequenceNode'
     local type_YamlScalarNode = previous_sharpyaml_instance:GetType 'SharpYaml.Serialization.YamlScalarNode'
 
-    ---@class nyaml
-    local out = {
-        __VERSION = 1.0,
-        values = {
-            null = null_value
-        },
-        helpers = {}
-    }
 
     do -- Deserialization
         local function deobjectify_node(node, handlers, visited)
@@ -299,6 +302,7 @@ function output( path, ... )
         end
 
         ---@param ... nyaml.to_yaml
+        ---@return string
         function out.serialize(...)
             local stream = __Activator.CreateInstance(type_YamlStream)
 
@@ -314,35 +318,35 @@ function output( path, ... )
         end
     end
 
-    do -- Helpers
-        function out.helpers.combine_path(...)
-            local args = {}
-            for i, k in ipairs {...} do args[i] = tostring(k) end
-            return __Path.Combine(unpack(args))
-        end
-
-        if RogueEssence ~= nil then
-            local pathmod = RogueEssence.PathMod
-            local getmodfromns = pathmod.GetModFromNamespace
-            local getmodfromuuid = pathmod.GetModFromUuid
-
-            function out.helpers.get_mod_path_from_namespace( namespace )
-                local mod = getmodfromns(namespace)
-                if mod.Path == '' then return end
-                return __Path.Combine(pathmod.APP_PATH, mod.Path)
-            end
-
-            function out.helpers.get_mod_path_from_uuid( uuid )
-                local success, uuid = pcall(__Guid, uuid)
-                if not success then return end
-                local mod = getmodfromuuid(uuid)
-                if mod.Path == '' then return end
-                return __Path.Combine(pathmod.APP_PATH, mod.Path)
-            end
-        end
-    end
-
     return out
 end
 
-return output
+do -- Helpers
+    function out.helpers.combine_path(...)
+        local args = {}
+        for i, k in ipairs {...} do args[i] = tostring(k) end
+        return __Path.Combine(unpack(args))
+    end
+
+    if RogueEssence ~= nil then
+        local pathmod = RogueEssence.PathMod
+        local getmodfromns = pathmod.GetModFromNamespace
+        local getmodfromuuid = pathmod.GetModFromUuid
+
+        function out.helpers.get_mod_path_from_namespace( namespace )
+            local mod = getmodfromns(namespace)
+            if mod.Path == '' then return end
+            return __Path.Combine(pathmod.APP_PATH, mod.Path)
+        end
+
+        function out.helpers.get_mod_path_from_uuid( uuid )
+            local success, uuid = pcall(__Guid, uuid)
+            if not success then return end
+            local mod = getmodfromuuid(uuid)
+            if mod.Path == '' then return end
+            return __Path.Combine(pathmod.APP_PATH, mod.Path)
+        end
+    end
+end
+
+return out
