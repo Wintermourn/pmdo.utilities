@@ -17,7 +17,7 @@
                 - `null`: explicitly outputs null instead of skipping.
                 - `array`: forces the output to fill gaps between keys with null.
                 - `object`: forces a table to always output keys.
-            - `__nyamlKeyOrder`: Can be used to force the order of an object's keys. Must be a list of keys (`string[]`) or a sort function (`fun(a, b): bool`).
+            - `__nyamlKeyOrder`: Can be used to force the order of an object's keys. Must be a list of keys (`string[]`).
                 - Keys not defined in the list will still be included in the output.
 ]]
 
@@ -72,7 +72,7 @@ local mt = {}
 ---@class nyaml
 ---@overload fun(path: string, ...: string): nyaml.full
 local out = setmetatable({
-    __VERSION = 1.4,
+    __VERSION = 1.5,
     values = {
         null = null_value
     },
@@ -128,7 +128,7 @@ function mt.__call( self, path, ... )
                 local value, style = node.Value, node.Style:ToString()
 
                 if style == 'Plain' or style == 'Any' then
-                    if keywords[value] then
+                    if keywords[value] ~= nil then
                         result = keywords[value]
                     elseif tonumber(value) ~= nil then
                         result = tonumber(value)
@@ -158,7 +158,7 @@ function mt.__call( self, path, ... )
                 end
             end
 
-            if tag and tag ~= '' and handlers and handlers[tag] then
+            if handlers and tag and tag ~= '' and handlers[tag] then
                 result = handlers[tag](result)
                 visited[node] = result 
             end
@@ -167,34 +167,34 @@ function mt.__call( self, path, ... )
         end
 
         ---@param input string
-        ---@param tag_handlers {[string]: (fun(input: any): any)}
-        ---@return table...?
-        ---@return string?
+        ---@param tag_handlers {[string]: (fun(input: any): any)}?
+        ---@return boolean
+        ---@return table...|string results
         function out.parse_string(input, tag_handlers)
             local stream = __Activator.CreateInstance(type_YamlStream)
             local string_reader = __StringReader(input)
             stream:Load(string_reader)
             string_reader:Close()
 
-            if stream.Documents.Count == 0 then return nil, 'File does not contain any documents'
+            if stream.Documents.Count == 0 then return false, 'File does not contain any documents'
             elseif stream.Documents.Count == 1 then
-                return deobjectify_node(stream.Documents[0].RootNode, tag_handlers) 
+                return true, deobjectify_node(stream.Documents[0].RootNode, tag_handlers) 
             else
                 local docs = stream.Documents
                 local out = {}
                 for i = 1, docs.Count do
                     out[i] = deobjectify_node(docs[i - 1].RootNode, tag_handlers)
                 end
-                return unpack(out)
+                return true, unpack(out)
             end
         end
 
         ---@param path string
-        ---@param tag_handlers {[string]: (fun(input: any): any)}
-        ---@return table...|nil results
-        ---@return string? error_message
+        ---@param tag_handlers {[string]: (fun(input: any): any)}?
+        ---@return boolean
+        ---@return table...|string results
         function out.parse_file(path, tag_handlers)
-            if not __File.Exists(path) then return nil, ('File %s does not exist'):format(path) end
+            if not __File.Exists(path) then return false, ('File %s does not exist'):format(path) end
             return out.parse_string(__File.ReadAllText(path), tag_handlers)
         end
     end
@@ -321,19 +321,19 @@ function mt.__call( self, path, ... )
                     for k in pairs(keys) do
                         node:Add(objectify_node(k, visited, anchor_state), objectify_node(v[k], visited, anchor_state))
                     end
-                elseif ty == 'function' then
+                else
                     local keys = {}
                     for k in pairs(v) do
                         keys[#keys + 1] = k
                     end
-                    table.sort(keys, mtt.__nyamlKeyOrder)
+                    table.sort(keys, ty == 'function' and mtt.__nyamlKeyOrder or nil)
                     for _, k in ipairs(keys) do
                         node:Add(objectify_node(k, visited, anchor_state), objectify_node(v[k], visited, anchor_state))
                     end
-                else
+                --[[ else
                     for k, v in pairs(v) do
                         node:Add(objectify_node(k, visited, anchor_state), objectify_node(v, visited, anchor_state))
-                    end
+                    end ]]
                 end
             end
             visited[v] = node
