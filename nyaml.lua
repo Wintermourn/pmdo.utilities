@@ -72,7 +72,7 @@ local mt = {}
 ---@class nyaml
 ---@overload fun(path: string, ...: string): nyaml.full
 local out = setmetatable({
-    __VERSION = 1.5,
+    __VERSION = 1.6,
     values = {
         null = null_value
     },
@@ -112,8 +112,6 @@ function mt.__call( self, path, ... )
     local type_YamlMappingNode = previous_sharpyaml_instance:GetType 'SharpYaml.Serialization.YamlMappingNode'
     local type_YamlSequenceNode = previous_sharpyaml_instance:GetType 'SharpYaml.Serialization.YamlSequenceNode'
     local type_YamlScalarNode = previous_sharpyaml_instance:GetType 'SharpYaml.Serialization.YamlScalarNode'
-    local type_YamlAliasNode = previous_sharpyaml_instance:GetType 'SharpYaml.Serialization.YamlAliasNode'
-
 
     do -- Deserialization
         local function deobjectify_node(node, handlers, visited)
@@ -204,7 +202,8 @@ function mt.__call( self, path, ... )
             local final_size, max_key = 0,0
             for i in pairs(tbl) do
                 if type(i) ~= 'number' or i < 1 or i % 1 ~= 0 then return false end
-                if i > max_key then max_key = 1 end
+                ---@cast i integer
+                if i > max_key then max_key = i end
                 final_size = final_size + 1
             end
             return final_size == max_key
